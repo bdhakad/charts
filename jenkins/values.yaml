@@ -455,7 +455,7 @@ controller:
   updateStrategy: {}
 
   ingress:
-    enabled: true
+    enabled: false
     # Override for the default paths that map requests to the backend
     paths:
     - backend:
@@ -475,11 +475,11 @@ controller:
     # kubernetes.io/tls-acme: "true"
     # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
     # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
-    ingressClassName: nginx
+    # ingressClassName: nginx
     # Set this path to jenkinsUriPrefix above or use annotations to rewrite path
-    path: "/jenkins"
+    # path: "/jenkins"
     # configures the hostname e.g. jenkins.example.com
-    hostName: test-jenkins.aicoe-ops-cluster-3850e9e5af2b203d563ea923acbee64e-0000.eu-gb.containers.appdomain.cloud
+    hostName: aicoe-ops-cluster-3850e9e5af2b203d563ea923acbee64e-0000.eu-gb.containers.appdomain.cloud
     tls:
     - secretName: aicoe-ops-cluster-3850e9e5af2b203d563ea923acbee64e-0000
       hosts:
@@ -527,7 +527,7 @@ controller:
     enabled: false
     labels: {}
     annotations: {}
-    path: "/jenkins"
+    # path: "/jenkins"
 
   # controller.hostAliases allows for adding entries to Pod /etc/hosts:
   # https://kubernetes.io/docs/concepts/services-networking/add-entries-to-pod-etc-hosts-with-host-aliases/
