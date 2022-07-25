@@ -1,5 +1,5 @@
 FROM node:14.17.3-alpine
-LABEL maintainer="Brajesh Dhakad <Brajesh.Dhakad@natwest.com>"
+LABEL maintainer="Brajesh Dhakad <email>"
 
 RUN apk update
 
