@@ -1,0 +1,12 @@
+FROM golang:alpine3.14
+
+RUN apk update
+
+# Setting up Java and Maven
+RUN apk add --update openjdk11 maven
+
+# Adding bash
+RUN apk add bash
+
+# Command prompt
+CMD /bin/bash
