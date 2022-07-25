@@ -1,0 +1,59 @@
+// Uses Declarative syntax to run commands inside a container.
+pipeline {
+    options {
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(daysToKeepStr: '2', numToKeepStr: '4'))
+    }
+    parameters {
+          string defaultValue: 'https://your_repo_url.git', description: 'Git Repository url', name: 'GitRepository'
+          string defaultValue: 'develop', description: 'Branch', name: 'Branch'
+          string defaultValue: 'Your Repository', description: 'Your Repository', name: 'DockerRepository'
+          string defaultValue: 'latest', description: 'Tag/version', name: 'Tag'
+          string defaultValue: '.', description: 'Dockerfile path eg. ./temp', name: 'Dockerfilepath'
+          booleanParam defaultValue: false, description: 'Push Image to private Registry', name: 'PUSH_TO_PRIVATE_REGISTRY'
+          string defaultValue: 'default namespace', description: 'Your Namespace', name: 'Namespace'
+          booleanParam defaultValue: false, description: 'Push Image to DockerHub', name: 'PUSH_TO_DOCKERHUB'
+          string defaultValue: 'dhakadb', description: 'Your DockerHubAccount', name: 'DockerHubAccount'
+          string defaultValue: '', description: 'Your Docker Hub Credentials Id', name: 'CredentialsId'
+          
+    }
+    agent {
+        kubernetes {
+             yamlFile 'podtemplates/dind.yaml'
+            defaultContainer 'dind'
+        }
+    }
+    stages {
+        stage('Install dependencies') {
+          steps {
+            sh 'apk add --no-cache git ca-certificates && wget -q https://download.clis.cloud.ibm.com/ibm-cloud-cli/2.1.1/IBM_Cloud_CLI_2.1.1_amd64.tar.gz -O IBM_Cloud_CLI_amd64.tar.gz && tar xvf IBM_Cloud_CLI_amd64.tar.gz && Bluemix_CLI/install_bluemix_cli && ibmcloud plugin install container-registry && ibmcloud plugin install container-service  && ibmcloud plugin install cloud-functions  && rm -fr *'
+            sh 'ibmcloud -v'
+          }
+        }
+        stage('checkout') {
+            steps {
+              
+              git branch: '${Branch}', credentialsId: 'credentialsId( eg. gitlab_token}', url: '${GitRepository}'
+            }
+        }
+        stage('Build docker image') {
+            steps {
+              sh "docker build -t ${DockerRepository}:${Tag} ${Dockerfilepath} "
+            }
+        }
+        stage('Push image to dockerhub') {
+            when {
+                expression {
+                    return params.PUSH_TO_DOCKERHUB == true
+                }
+            }
+            steps {
+              withCredentials([usernamePassword(credentialsId: "${CredentialsId}", passwordVariable: 'password', usernameVariable: 'username')]) {
+                sh 'docker login -u $username -p $password'
+                sh "docker tag ${DockerRepository}:${Tag} ${DockerHubAccount}/${DockerRepository}:${Tag}"
+                sh "docker push ${DockerHubAccount}/${DockerRepository}:${Tag}"
+              }
+            }
+        }
+    }
+}
