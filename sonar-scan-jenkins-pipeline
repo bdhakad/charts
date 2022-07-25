@@ -1,0 +1,48 @@
+// Uses Declarative syntax to run commands inside a container.
+def DATE = '16-11-21'
+pipeline {
+    triggers {
+      cron '''TZ=Asia/Calcutta
+    H 10 * * *'''
+    }
+    options {
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(daysToKeepStr: '2', numToKeepStr: '2'))
+    }
+    agent {
+        kubernetes {
+            yamlFile 'java-go-pod.yaml'
+            defaultContainer 'java-go' 
+        }
+    }
+    stages {
+        stage('Checkout & Build') {
+            steps {
+                dir('directory-name') {
+                    git branch: 'master', credentialsId: 'CRED_ID', url: 'https://target-go-repo-to-scan.git'
+                    sh 'java -version'
+                    sh 'go version'
+                }
+                
+            }
+        }
+        stage('SonarQube Analysis') {
+            environment {
+                scannerHome = tool 'SonarQubeScanner'
+            }
+            steps {
+                dir('directory-name') {
+                    script {
+                        DATE = sh (script: 'date +%d-%m-%y', returnStdout: true).trim()
+                    }
+                    sh 'echo -e "\n" >> sonar-project.properties'
+                    sh "echo sonar.projectVersion=${DATE} >> sonar-project.properties"
+                    withSonarQubeEnv('sonarqube') {
+                        sh "${scannerHome}/bin/sonar-scanner"
+                    }
+                }
+            }
+        }
+    
+    } // stages ends here
+}
